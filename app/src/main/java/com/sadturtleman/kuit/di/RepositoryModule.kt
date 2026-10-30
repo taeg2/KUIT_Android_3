@@ -17,8 +17,4 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindBookRepository(impl: BookRepositoryImpl): BookRepository
-    // [TODO 3-a] @Binds @Singleton 로 BookRepositoryImpl → BookRepository 연결.
-    //   abstract fun bindBookRepository(impl: BookRepositoryImpl): BookRepository
-
-    // [TODO 3-b] data/BookRepositoryImpl.kt 생성자에 @Inject 붙이기 (아래 파일).
 }

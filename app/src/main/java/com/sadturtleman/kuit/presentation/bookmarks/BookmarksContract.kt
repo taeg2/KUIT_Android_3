@@ -12,6 +12,5 @@ data class BookmarksUiState(
 }
 
 sealed interface BookmarksIntent {
-    data object Refresh : BookmarksIntent
     data class ToggleBookmark(val id: String) : BookmarksIntent
 }

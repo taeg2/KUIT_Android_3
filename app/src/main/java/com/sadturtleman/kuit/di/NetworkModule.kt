@@ -10,6 +10,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
@@ -27,7 +28,10 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit = Retrofit.Builder()
         .baseUrl("https://www.googleapis.com/books/v1/")
-        .client(OkHttpClient.Builder().apply {}.build())
+        .client(OkHttpClient.Builder()
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BASIC
+            }).build())
         .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
         .build()
 

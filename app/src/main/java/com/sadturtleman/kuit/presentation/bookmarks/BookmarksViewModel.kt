@@ -6,7 +6,11 @@ import com.sadturtleman.kuit.domain.GetBookmarkedBooksUseCase
 import com.sadturtleman.kuit.domain.ToggleBookmarkUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -14,29 +18,21 @@ import javax.inject.Inject
 // [TODO 4-b] HomeViewModel 과 동일하게.
 @HiltViewModel
 class BookmarksViewModel @Inject constructor(
-    private val getBookmarkedBooks: GetBookmarkedBooksUseCase,
+    getBookmarkedBooks: GetBookmarkedBooksUseCase,
     private val toggleBookmark: ToggleBookmarkUseCase,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(BookmarksUiState())
-    val state = _state.asStateFlow()
-
-    init { onIntent(BookmarksIntent.Refresh) }
+    val state: StateFlow<BookmarksUiState> = getBookmarkedBooks()
+        .map { books -> BookmarksUiState(books = books) }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = BookmarksUiState(isLoading = true),
+        )
 
     fun onIntent(intent: BookmarksIntent) {
         when (intent) {
-            BookmarksIntent.Refresh -> load()
-            is BookmarksIntent.ToggleBookmark -> viewModelScope.launch {
-                toggleBookmark(intent.id)
-                load()   // 해제한 책은 목록에서 바로 사라진다
-            }
+            is BookmarksIntent.ToggleBookmark -> toggleBookmark(intent.id)   // 해제하면 Flow 가 알아서 목록 갱신
         }
-    }
-
-    private fun load() = viewModelScope.launch {
-        _state.update { it.copy(isLoading = true, error = null) }
-        runCatching { getBookmarkedBooks() }
-            .onSuccess { books -> _state.update { it.copy(isLoading = false, books = books) } }
-            .onFailure { e -> _state.update { it.copy(isLoading = false, error = e.message ?: "알 수 없는 오류") } }
     }
 }
